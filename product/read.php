@@ -7,6 +7,18 @@ header("Content-Type: application/json; charset=UTF-8");
 include_once '../config/database.php';
 include_once '../objects/product.php';
 
+
+// generate json web token
+include_once '../core/config.php';
+include_once '../vendor/firebase/php-jwt/src/BeforeValidException.php';
+include_once '../vendor/firebase/php-jwt/src/ExpiredException.php';
+include_once '../vendor/firebase/php-jwt/src/SignatureInvalidException.php';
+include_once '../vendor/firebase/php-jwt/src/JWT.php';
+require '../vendor/autoload.php';
+
+// generate jwt will be here
+
+
 // instantiate database and product object
 $database = new Database();
 $db = $database->getConnection();
@@ -20,6 +32,19 @@ $num = $stmt->rowCount();
 
 // check if more than 0 record found
 if($num>0){
+
+    $token = array(
+        "iss" => $iss,
+        "aud" => $aud,
+        "iat" => $iat,
+        "nbf" => $nbf,
+        "data" => array(
+            "actor_id" => $actor_id->id,
+            "fullname" => $fullname->firstname,
+            "last_update" => $last_update->lastupdate
+        )
+    );
+
 
     // products array
     $products_arr=array();
@@ -41,14 +66,25 @@ if($num>0){
         );
 
         array_push($products_arr["records"], $product_item);
-        echo json_encode($fullname);
+        // echo json_encode($actor_id);
+        // echo json_encode($fullname);
+        // echo json_encode($last_update);
     }
 
     // set response code - 200 OK
     http_response_code(200);
 
     // show products data in json format
-    echo json_encode($products_arr);
+    // echo json_encode($products_arr);
+
+    // generate jwt
+    $jwt = JWT::encode($token, $key);
+    echo json_encode(
+            array(
+                "message" => "Successful login.",
+                "jwt" => $jwt
+            )
+        );
 }
 
 else{
